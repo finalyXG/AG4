@@ -140,7 +140,7 @@ class cyclegan(object):
 		self.d_loss_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits( logits=self.disc_fake , labels=tf.zeros_like(self.disc_fake) )) 
 
 		self.d_loss = self.d_loss_true + self.d_loss_fake #+ self.d_loss_wi_rv self.c_loss
-		self.g_loss_l1 = 10 * tf.reduce_mean(tf.abs(self.real_video_tf - self.combined_v_tf))
+		self.g_loss_l1 = 5 * tf.reduce_mean(tf.abs(self.real_video_tf - self.combined_v_tf))
 		self.g_loss = self.g_loss_l1 + tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits( logits=self.disc_fake , labels=tf.ones_like(self.disc_fake) )) # + self.g_loss_l1 self.gc_loss + 
 
 ## 
