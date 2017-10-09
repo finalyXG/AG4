@@ -1,10 +1,10 @@
 from __future__ import division
 import os
 import time
-from glob import glob
+from glob import glob  
 import tensorflow as tf
 import numpy as np
-from six.moves import xrange
+from six.moves import xrange 
 from collections import namedtuple
 from module import *
 from utils import *
@@ -88,7 +88,7 @@ class cyclegan(object):
 											[self.options.batch_size, self.image_size, self.image_size,
 										   	3],
 										  name='fake_images')
-		noise = tf.random_normal(shape = self.real_data_image.get_shape(), mean = 0.0, stddev = 0.005, dtype = tf.float32) 
+		noise = tf.random_normal(shape = self.real_data_image.get_shape(), mean = 0.0, stddev = 0.0005, dtype = tf.float32) 
 		self.real_data_image = self.real_data_image + noise 
 		self.fake_data_image = self.fake_data_image + noise 
         
@@ -140,11 +140,10 @@ class cyclegan(object):
 		self.d_loss_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits( logits=self.disc_fake , labels=tf.zeros_like(self.disc_fake) )) 
 
 		self.d_loss = self.d_loss_true + self.d_loss_fake #+ self.d_loss_wi_rv self.c_loss
-		self.g_loss_l1 = 5 * tf.reduce_mean(tf.abs(self.real_video_tf - self.combined_v_tf))
+		self.g_loss_l1 = 0.05 * tf.reduce_mean(tf.abs(self.real_video_tf - self.combined_v_tf))
 		self.g_loss = self.g_loss_l1 + tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits( logits=self.disc_fake , labels=tf.ones_like(self.disc_fake) )) # + self.g_loss_l1 self.gc_loss + 
 
-## 
-        
+##         
 ## (1,2,/16,0) -- no motion
 ## (0.01,2,/16,0) -- no motion
 ## (5.0,2,/16,0)-- no motion
@@ -244,24 +243,22 @@ class cyclegan(object):
 		#laurence 
 		self.shot_len = 4
 
-		epoch = 22201
-		#for epoch_batch in range(0,20000): #args.epoch
-		for epoch_batch in range(0,1): #args.epoch
-			db = np.load('./slamdunk/lbxx.npz.npy')[0:2000]
+		epoch = 1
+		for epoch_batch in range(0,20000): #args.epoch
+		#for epoch_batch in range(0,1): #args.epoch
+			db = np.load('../slamdunk/lbxx.npz.npy')[0:2140]
 			#db = np.load('../slamdunk/lbxx.npz.npy')[2000:]
-			pdb.set_trace()
 			idx = np.random.permutation(db.shape[0] - 1)
 			self.count_end = db.shape[0]
+            
+			merge_image = np.zeros((self.batch_size,self.image_size,self.image_size,3))
+			merge_image_false = np.zeros((self.batch_size,self.image_size,self.image_size,3))
+			a_video = np.zeros((self.batch_size,self.frames_nb,self.image_size,self.image_size,self.input_c_dim))		
             
 			epoch += 1
 			i = 0
 			for ii in idx:
-				i += 1
-                
-				merge_image = np.zeros((self.batch_size,self.image_size,self.image_size,3))
-				merge_image_false = np.zeros((self.batch_size,self.image_size,self.image_size,3))
-				a_video = np.zeros((self.batch_size,self.frames_nb,self.image_size,self.image_size,self.input_c_dim))		
-
+				i += 1               
 
 				shot = np.array(db[ii]) / 127.5 - 1
 				current_frame = shot[0]
@@ -304,68 +301,69 @@ class cyclegan(object):
 					######################
 					print("====Update Critic====")
 					for j in range(1):
-						1#_, summary_str, errD, errG, errL1 = self.sess.run([self.d_optim, self.d_sum,self.d_loss,self.g_loss,self.g_loss_l1],\
-						#					feed_dict={self.z: batch_z,\
-						#					self.fake_data_image: merge_image_false,\
-						#					self.real_data_image: merge_image,self.real_data_video:a_video}) #
-						#self.writer.add_summary(summary_str, counter) 
-					#print("e#rrD: [%4.4f] , errG: [%4.4f], errL1: [%4.4f]" % (errD,errG,errL1))
+						_, summary_str, errD, errG, errL1 = self.sess.run([self.d_optim, self.d_sum,self.d_loss,self.g_loss,self.g_loss_l1],\
+											feed_dict={self.z: batch_z,\
+											self.fake_data_image: merge_image_false,\
+											self.real_data_image: merge_image,self.real_data_video:a_video}) #
+						self.writer.add_summary(summary_str, counter) 
+					print("e#rrD: [%4.4f] , errG: [%4.4f], errL1: [%4.4f]" % (errD,errG,errL1))
 					####################
 					# Update G network #
 					####################
 					for j in range(1):
 						print("====Update Generator====")
-						#_, summary_str, errD, errG, errL1 = self.sess.run([self.g_optim, self.g_sum, self.d_loss,self.g_loss,self.g_loss_l1],\
-						#					feed_dict={ self.z: batch_z,\
-						#					self.fake_data_image: merge_image_false,\
-						#					self.real_data_image: merge_image,self.real_data_video:a_video})
-						#self.writer.add_summary(summary_str, counter)
-					#print("errD: [%4.4f] , errG: [%4.4f], errL1: [%4.4f]" % (errD,errG,errL1))
+						_, summary_str, errD, errG, errL1 = self.sess.run([self.g_optim, self.g_sum, self.d_loss,self.g_loss,self.g_loss_l1],\
+											feed_dict={ self.z: batch_z,\
+											self.fake_data_image: merge_image_false,\
+											self.real_data_image: merge_image,self.real_data_video:a_video})
+						self.writer.add_summary(summary_str, counter)
+					print("errD: [%4.4f] , errG: [%4.4f], errL1: [%4.4f]" % (errD,errG,errL1))
 
 					print(("Epoch: [%2d] [%6d/%6d] [%9d] time: %4.4f" \
 					   % (epoch, i, self.count_end, counter, time.time() - start_time)))
-					#if  counter == 2:
-					#    self.sample_model(args.sample_dir, epoch, i)
+
 				tmp_rand = random.random()
-				if tmp_rand <= 10.1: 
-					#self.validate(epoch,args)
-					tmp_dir = './{}/{}/'.format(args.sample_dir,epoch) 
-					if not os.path.exists(tmp_dir):
-						os.makedirs(tmp_dir)
-					#np.squeeze(merge_image[0,:,:,0:3]
-					save_images([[ np.squeeze(real_image_crop[0]) ]],[self.batch_size, 1],'./{}/{}/A_{}_{:02d}_{:03d}.jpg'.format(args.sample_dir,epoch,i,1,epoch))
+				if tmp_rand <= 0.01: 
+					for jj in range(3):
+						batch_z = np.random.uniform(-1, 1, [self.batch_size, self.z_dim]) \
+							.astype(np.float32)
+
+						fake_A, real_video_tf,real_image_tf,real_image_crop,m1_gb,m2_gf,m3_im,mask1,mask2,mask3,g4,gb = self.sess.run([self.fake_A, self.real_video_tf, self.real_data_image, self.real_image_crop,self.m1_gb, self.m2_gf, self.m3_im, self.mask1, self.mask2, self.mask3,self.g4,self.gb ],feed_dict={self.real_data_image: merge_image,self.z:batch_z,self.real_data_video:a_video})
+						fake_A = np.array([fake_A])
+						pred_video = fake_A[0]  
+						#pdb.set_trace()
+                    
+						tmp_dir = './{}/{}/'.format(args.sample_dir,epoch) 
+						if not os.path.exists(tmp_dir):
+							os.makedirs(tmp_dir)
+						save_images([[ np.squeeze(real_image_crop[0]) ]],[self.batch_size, 1],'./{}/{}/A_{}_{:02d}_{:03d}.jpg'.format(args.sample_dir,epoch,i,1,epoch))
                         
-						#save_images([[ np.squeeze(merge_image[0,:,:,6:9]) ]],[self.batch_size, 1],'./{}/{}/A_{}_{:02d}_{:03d}.jpg'.format(args.sample_dir,epoch,i,3,epoch))
-						#save_images([[ np.squeeze(fake_A[0][0]) ]],[self.batch_size, 1],'./{}/{}/A_{}_{:02d}_{:03d}.jpg'.format(args.sample_dir,epoch,i,2,epoch))
-
-							#save_images([[ rgb ]],[self.batch_size, 1],'./{}/{}/A_{}_{:02d}_{:03d}.jpg'.format(args.sample_dir,epoch,i,14,epoch))
-
-					make_gif(np.squeeze(np.array(real_video_tf[0])),\
-							'./{}/{}/A_{}_{:02d}_{:03d}.gif'.format(args.sample_dir,epoch,i,2,epoch),2)
-					make_gif(np.array(pred_video[0]),\
-							'./{}/{}/A_{}_{:02d}_{:03d}.gif'.format(args.sample_dir,epoch,i,3,epoch),2)
+						make_gif(np.squeeze(np.array(real_video_tf[0])),\
+							'./{}/{}/A_{}_{:02d}_{:03d}.gif'.format(args.sample_dir,epoch,i,2+jj*10,epoch),2)
+						make_gif(np.array(pred_video[0]),\
+							'./{}/{}/A_{}_{:02d}_{:03d}.gif'.format(args.sample_dir,epoch,i,3+jj*10,epoch),2)
                     
-					make_gif(np.array(m1_gb[0]),\
-							'./{}/{}/A_{}_{:02d}_{:03d}.gif'.format(args.sample_dir,epoch,i,4,epoch),2)
-					make_gif(np.array(m2_gf[0]),\
-							'./{}/{}/A_{}_{:02d}_{:03d}.gif'.format(args.sample_dir,epoch,i,5,epoch),2)
-					make_gif(np.array(m3_im[0]),\
-							'./{}/{}/A_{}_{:02d}_{:03d}.gif'.format(args.sample_dir,epoch,i,6,epoch),2)                    
+						make_gif(np.array(m1_gb[0]),\
+							'./{}/{}/A_{}_{:02d}_{:03d}.gif'.format(args.sample_dir,epoch,i,4+jj*10,epoch),2)
+						make_gif(np.array(m2_gf[0]),\
+							'./{}/{}/A_{}_{:02d}_{:03d}.gif'.format(args.sample_dir,epoch,i,5+jj*10,epoch),2)
+						make_gif(np.array(m3_im[0]),\
+							'./{}/{}/A_{}_{:02d}_{:03d}.gif'.format(args.sample_dir,epoch,i,6+jj*10,epoch),2)                    
                     
-					make_gif(np.squeeze(np.array(mask1[0])),\
-							'./{}/{}/A_{}_{:02d}_{:03d}.gif'.format(args.sample_dir,epoch,i,7,epoch),2)
-					make_gif(np.squeeze(np.array(mask2[0])),\
-							'./{}/{}/A_{}_{:02d}_{:03d}.gif'.format(args.sample_dir,epoch,i,8,epoch),2)
-					make_gif(np.squeeze(np.array(mask3[0])),\
-							'./{}/{}/A_{}_{:02d}_{:03d}.gif'.format(args.sample_dir,epoch,i,9,epoch),2)
+						#make_gif(np.squeeze(np.array(mask1[0])),\
+						#	'./{}/{}/A_{}_{:02d}_{:03d}.gif'.format(args.sample_dir,epoch,i,7+ii*10,epoch),2)
+						#make_gif(np.squeeze(np.array(mask2[0])),\
+						#	'./{}/{}/A_{}_{:02d}_{:03d}.gif'.format(args.sample_dir,epoch,i,8+ii*10,epoch),2)
+						#make_gif(np.squeeze(np.array(mask3[0])),\
+						#	'./{}/{}/A_{}_{:02d}_{:03d}.gif'.format(args.sample_dir,epoch,i,9+ii*10,epoch),2)
                     
-					make_gif(np.squeeze(np.array(g4[0])),\
-							'./{}/{}/A_{}_{:02d}_{:03d}.gif'.format(args.sample_dir,epoch,i,10,epoch),2)
-					make_gif(np.squeeze(np.array(gb[0])),\
-							'./{}/{}/A_{}_{:02d}_{:03d}.gif'.format(args.sample_dir,epoch,i,11,epoch),2)
+						#make_gif(np.squeeze(np.array(g4[0])),\
+						#	'./{}/{}/A_{}_{:02d}_{:03d}.gif'.format(args.sample_dir,epoch,i,10+ii*10,epoch),2)
+						#make_gif(np.squeeze(np.array(gb[0])),\
+						#	'./{}/{}/A_{}_{:02d}_{:03d}.gif'.format(args.sample_dir,epoch,i,11+ii*10,epoch),2)
   
                     
-				if np.mod(counter, 400) == 0:
+				if np.mod(counter, 4000) == 0:            
 					self.save(args.checkpoint_dir, counter )
 
 

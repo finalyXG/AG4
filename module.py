@@ -57,21 +57,21 @@ def discriminator_video(video0, options, reuse=False, name="discriminator_Camera
 		#video = tf.concat([video0,image],1)
 		video = video0
 
-		h0 = lrelu(conv3d(video, 32,2,5,5,1,2,2, name='dv_h0_conv'))
+		h0 = lrelu(conv3d(video, 32,5,5,5,1,2,2, name='dv_h0_conv'))
 
 		h1 = lrelu(tf.contrib.layers.batch_norm(
-			conv3d(h0, 64,2,5,5,1,2,2, name='dv_h1_conv'), scope='dv_bn1'))
+			conv3d(h0, 64,5,5,5,1,2,2, name='dv_h1_conv'), scope='dv_bn1'))
 		h2 = lrelu(tf.contrib.layers.batch_norm(
-			conv3d(h1, 128,2,5,5,1,2,2, name='dv_h2_conv'), scope='dv_bn2'))
+			conv3d(h1, 128,5,5,5,1,2,2, name='dv_h2_conv'), scope='dv_bn2'))
 		h3 = lrelu(tf.contrib.layers.batch_norm(
-			conv3d(h2, 128,2,5,5,1,2,2, name='dv_h3_conv'), scope='dv_bn3'))
+			conv3d(h2, 128,5,5,5,1,2,2, name='dv_h3_conv'), scope='dv_bn3'))
 
 		h4 = lrelu(tf.contrib.layers.batch_norm(
-			conv3d(h3, 256,2,5,5,1,2,2, name='dv_h4_conv'), scope='dv_bn4'))
-		
+			conv3d(h3, 256,5,5,5,1,2,2, name='dv_h4_conv'), scope='dv_bn4'))
 
 		h5 = lrelu(tf.contrib.layers.batch_norm(
-			conv3d(h4, 256,2,5,5,1,2,2, name='dv_h6_conv'), scope='dv_bn6'))
+			conv3d(h4, 512,5,5,5,1,2,2, name='dv_h6_conv'), scope='dv_bn6'))
+		pdb.set_trace()
 
 		h_tmp = tf.contrib.layers.flatten(h5)
 		h7 = linear( h_tmp , 10, 'dv_h6_lin')
@@ -87,23 +87,23 @@ def VideoCritic( video, image, options, reuse=False, name="VideoCritic"):
 			scope.reuse_variables()
 
 		i0 = lrelu(conv2d(image, options.df_dim, name='dd_h0_conv'))
-		i1 = lrelu(instance_norm(conv2d(i0, options.df_dim*2, name='dd_h1_conv'), 'dd_bn1'))
-		i2 = lrelu(instance_norm(conv2d(i1, options.df_dim*4, name='dd_h2_conv'), 'dd_bn2'))
-		i3 = lrelu(instance_norm(conv2d(i2, options.df_dim*4,  name='dd_h3_conv'), 'dd_bn3'))
-		i4 = lrelu(instance_norm(conv2d(i3, options.df_dim*4,  name='dd_h4_conv'), 'dd_bn4'))
-		i5 = tf.contrib.layers.flatten(i4)
+		image1 = tf.expand_dims(image,axis=1)
+		video1 = tf.concat([image1,video],axis=1)
+		#i1 = lrelu(instance_norm(conv2d(i0, options.df_dim*2, name='dd_h1_conv'), 'dd_bn1'))
+		#i2 = lrelu(instance_norm(conv2d(i1, options.df_dim*4, name='dd_h2_conv'), 'dd_bn2'))
+		#i3 = lrelu(instance_norm(conv2d(i2, options.df_dim*4,  name='dd_h3_conv'), 'dd_bn3'))
+		#i4 = lrelu(instance_norm(conv2d(i3, options.df_dim*4,  name='dd_h4_conv'), 'dd_bn4'))
+		#i5 = tf.contrib.layers.flatten(i4)
 
-		h0 = lrelu(conv3d(video, 64,  name='d_h0_conv'))
-		h1 = lrelu(tf.contrib.layers.batch_norm(conv3d(h0, 64*2,  name='d_h1_conv')))
-		h2 = lrelu(tf.contrib.layers.batch_norm(conv3d(h1, 64*4,  name='d_h2_conv')))
-		h3 = lrelu(tf.contrib.layers.batch_norm(conv3d(h2, 64*8,  name='d_h3_conv')))
-		h3 = lrelu(tf.contrib.layers.batch_norm(conv3d(h3, 64*8,  name='d_h4_conv')))
-		h4 = tf.concat([i5,tf.contrib.layers.flatten(h3)],axis=-1)
+		h0 = lrelu(conv3d(video1, 16,  name='d_h0_conv'))
+		h1 = lrelu(tf.contrib.layers.batch_norm(conv3d(h0, 16*2,  name='d_h1_conv')))
+		h2 = lrelu(tf.contrib.layers.batch_norm(conv3d(h1, 16*4,  name='d_h2_conv')))
+		h3 = lrelu(tf.contrib.layers.batch_norm(conv3d(h2, 16*8,  name='d_h3_conv')))
+		h3 = lrelu(tf.contrib.layers.batch_norm(conv3d(h3, 16*16,  name='d_h4_conv')))
+		h4 = lrelu(tf.contrib.layers.batch_norm(conv3d(h3, 16*32,  name='d_h5_conv')))
+		h4 = tf.contrib.layers.flatten(h4)
 
 		h4 = linear(h4, 1, 'd_h3_lin')
-
-
-
 		return tf.nn.sigmoid(h4), h4
 
 
@@ -383,6 +383,27 @@ def videogan_generator(self, image,z, mtx, options, reuse = False, name="generat
 		h0b = lin1
 		de_conv_ks = 5
 
+        
+###############        
+        
+		p2 = tf.reshape(h0, [-1, 1, 16, 16, 64])
+		p1_2 = tf.concat([p2,i2_],axis=-1)                
+
+		p1_3 = deconv3d(p1_2, [self.batch_size, 2, 32, 32, 32],de_conv_ks,de_conv_ks,de_conv_ks,2,2,2,1,1,1, name='g_p_h1_3', with_w=False)
+		p1_3 = tf.nn.relu(tf.contrib.layers.batch_norm(p1_3,scope='g_p_bn1_3_1'))
+		p1_3 = tf.concat([p1_3,i1_],axis=-1)                
+
+		p1_4 = deconv3d(p1_3, [self.batch_size, 4, 64, 64, 16],de_conv_ks,de_conv_ks,de_conv_ks,2,2,2,1,1,1, name='g_p_h1_4', with_w=False)
+		p1_4 = tf.nn.relu(tf.contrib.layers.batch_norm(p1_4,scope='g_p_bn1_4_1'))
+		p1_4 = tf.concat([p1_4,i0_],axis=-1)              
+
+		p1_5 = deconv3d(p1_4, [self.batch_size, 8, 128, 128, 3],de_conv_ks,de_conv_ks,de_conv_ks,2,2,2,1,1,1, name='g_p_h1_5', with_w=False)
+		mask_p = deconv3d(p1_4,[self.batch_size, 8, 128, 128, 1],de_conv_ks,de_conv_ks,de_conv_ks,2,2,2,1,1,1, name='gp_mask', with_w=False)
+		mask_p = tf.nn.softmax(mask_p,dim=-1)
+             
+
+###############
+        
 		d2 = tf.reshape(h0, [-1, 1, 16, 16, 64])
 		d1_2 = tf.concat([d2,i2_],axis=-1)                
 
@@ -394,40 +415,50 @@ def videogan_generator(self, image,z, mtx, options, reuse = False, name="generat
 		d1_4 = tf.nn.relu(tf.contrib.layers.batch_norm(d1_4,scope='g_b_bn1_4_1'))
 		d1_4 = tf.concat([d1_4,i0_],axis=-1)              
 
-		h1_5 = deconv3d(d1_4, [self.batch_size, 8, 128, 128, 3],de_conv_ks,de_conv_ks,de_conv_ks,2,2,2,1,1,1, name='g_b_h1_5', with_w=False)
+		d1_5 = deconv3d(d1_4, [self.batch_size, 8, 128, 128, 3],de_conv_ks,de_conv_ks,de_conv_ks,2,2,2,1,1,1, name='g_b_h1_5', with_w=False)
+		mask_b = deconv3d(d1_4,[self.batch_size, 8, 128, 128, 1],de_conv_ks,de_conv_ks,de_conv_ks,2,2,2,1,1,1, name='gb_mask', with_w=False)
+		mask_b = tf.nn.softmax(mask_b,dim=-1)
+		gb4 = tf.nn.tanh(d1_5)
         
-		d7 = h1_5
-		gb4 = tf.nn.tanh(d7)
+###############
+        
+        
 
 		h2 = tf.reshape(h0, [-1, 1, 16, 16, 64])
 		h1_2 = tf.concat([h2,i2_],axis=-1) 
 
-		h1_3 = deconv3d(h1_2, [tf.shape(h0)[0], 2, 32, 32, 32],de_conv_ks,de_conv_ks,de_conv_ks,2,2,2,1,1,1, name='g_f_h1_3', with_w=False)
+		h1_3 = deconv3d(h1_2, [self.batch_size, 2, 32, 32, 32],de_conv_ks,de_conv_ks,de_conv_ks,2,2,2,1,1,1, name='g_f_h1_3', with_w=False)
 		h1_3 = tf.nn.relu(tf.contrib.layers.batch_norm(h1_3,scope='g_f_bn1_3_1'))
 		h1_3 = tf.concat([h1_3,i1_],axis=-1)                
 
-		h1_4 = deconv3d(h1_3, [tf.shape(h0)[0], 4, 64, 64, 16],de_conv_ks,de_conv_ks,de_conv_ks,2,2,2,1,1,1, name='g_f_h1_4', with_w=False)
+		h1_4 = deconv3d(h1_3, [self.batch_size, 4, 64, 64, 16],de_conv_ks,de_conv_ks,de_conv_ks,2,2,2,1,1,1, name='g_f_h1_4', with_w=False)
 		h1_4 = tf.nn.relu(tf.contrib.layers.batch_norm(h1_4,scope='g_f_bn1_4_1'))
-		h1_4 = tf.concat([h1_4,i0_],axis=-1)                
+		h1_4 = tf.concat([h1_4,i0_],axis=-1)               
 
-		h1_5 = deconv3d(h1_4, [tf.shape(h0)[0], 8, 128, 128, 3],de_conv_ks,de_conv_ks,de_conv_ks,2,2,2,1,1,1, name='g_f_h1_5', with_w=False)
+		h1_5 = deconv3d(h1_4, [self.batch_size, 8, 128, 128, 3],de_conv_ks,de_conv_ks,de_conv_ks,2,2,2,1,1,1, name='g_f_h1_5', with_w=False)
 
-		mask = deconv3d(h1_4,[tf.shape(h0)[0], 8, 128, 128, 3],de_conv_ks,de_conv_ks,de_conv_ks,2,2,2,1,1,1, name='g_mask1', with_w=False)
-		mask = tf.nn.softmax(mask,dim=-1)
-		mask1 = tf.expand_dims(mask[:,:,:,:,0],axis=-1)
-		mask2 = tf.expand_dims(mask[:,:,:,:,1],axis=-1)
-		mask3 = tf.expand_dims(mask[:,:,:,:,2],axis=-1)
+		mask_f = deconv3d(h1_4,[self.batch_size, 8, 128, 128, 1],de_conv_ks,de_conv_ks,de_conv_ks,2,2,2,1,1,1, name='gf_mask', with_w=False)
+		mask_f = tf.nn.softmax(mask_f,dim=-1)
+		#mask1 = tf.expand_dims(mask[:,:,:,:,0],axis=-1)
+		#mask2 = tf.expand_dims(mask[:,:,:,:,1],axis=-1)
+		#mask3 = tf.expand_dims(mask[:,:,:,:,2],axis=-1)
         
 		gf4 = tf.nn.tanh(h1_5)
-        
+###############
+
+		mask1 = mask_b
+		mask2 = mask_f
+		mask3 = mask_p
+		mask_sum = mask1 + mask2 + mask3
+
 		image_tile = tf.tile(tf.expand_dims(image,axis=1),[1,8,1,1,1])
         
-		m1_gb = mask1 * gb4
-		m2_gf = mask2 * gf4
-		m3_im = mask3 * image_tile
+		m1_gb = mask1 * gb4 / mask_sum
+		m2_gf = mask2 * gf4 / mask_sum
+		m3_im = mask3 * image_tile / mask_sum
         
         
-		static_video = m1_gb  + m2_gf + m3_im
+		static_video = m1_gb + m2_gf + m3_im
 
 		return gf4, mask1, mask2, mask3, gb4, static_video, m1_gb, m2_gf, m3_im
 
