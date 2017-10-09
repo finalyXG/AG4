@@ -244,12 +244,11 @@ class cyclegan(object):
 		#laurence 
 		self.shot_len = 4
 
-		epoch = 22201
-		#for epoch_batch in range(0,20000): #args.epoch
-		for epoch_batch in range(0,1): #args.epoch
-			db = np.load('./slamdunk/lbxx.npz.npy')[0:2000]
+		epoch = 1
+		for epoch_batch in range(0,20000): #args.epoch
+		#for epoch_batch in range(0,1): #args.epoch
+			db = np.load('../slamdunk/lbxx.npz.npy')[0:2000]
 			#db = np.load('../slamdunk/lbxx.npz.npy')[2000:]
-			pdb.set_trace()
 			idx = np.random.permutation(db.shape[0] - 1)
 			self.count_end = db.shape[0]
             
@@ -304,30 +303,30 @@ class cyclegan(object):
 					######################
 					print("====Update Critic====")
 					for j in range(1):
-						1#_, summary_str, errD, errG, errL1 = self.sess.run([self.d_optim, self.d_sum,self.d_loss,self.g_loss,self.g_loss_l1],\
-						#					feed_dict={self.z: batch_z,\
-						#					self.fake_data_image: merge_image_false,\
-						#					self.real_data_image: merge_image,self.real_data_video:a_video}) #
-						#self.writer.add_summary(summary_str, counter) 
-					#print("e#rrD: [%4.4f] , errG: [%4.4f], errL1: [%4.4f]" % (errD,errG,errL1))
+						_, summary_str, errD, errG, errL1 = self.sess.run([self.d_optim, self.d_sum,self.d_loss,self.g_loss,self.g_loss_l1],\
+											feed_dict={self.z: batch_z,\
+											self.fake_data_image: merge_image_false,\
+											self.real_data_image: merge_image,self.real_data_video:a_video}) #
+						self.writer.add_summary(summary_str, counter) 
+					print("e#rrD: [%4.4f] , errG: [%4.4f], errL1: [%4.4f]" % (errD,errG,errL1))
 					####################
 					# Update G network #
 					####################
 					for j in range(1):
 						print("====Update Generator====")
-						#_, summary_str, errD, errG, errL1 = self.sess.run([self.g_optim, self.g_sum, self.d_loss,self.g_loss,self.g_loss_l1],\
-						#					feed_dict={ self.z: batch_z,\
-						#					self.fake_data_image: merge_image_false,\
-						#					self.real_data_image: merge_image,self.real_data_video:a_video})
-						#self.writer.add_summary(summary_str, counter)
-					#print("errD: [%4.4f] , errG: [%4.4f], errL1: [%4.4f]" % (errD,errG,errL1))
+						_, summary_str, errD, errG, errL1 = self.sess.run([self.g_optim, self.g_sum, self.d_loss,self.g_loss,self.g_loss_l1],\
+											feed_dict={ self.z: batch_z,\
+											self.fake_data_image: merge_image_false,\
+											self.real_data_image: merge_image,self.real_data_video:a_video})
+						self.writer.add_summary(summary_str, counter)
+					print("errD: [%4.4f] , errG: [%4.4f], errL1: [%4.4f]" % (errD,errG,errL1))
 
 					print(("Epoch: [%2d] [%6d/%6d] [%9d] time: %4.4f" \
 					   % (epoch, i, self.count_end, counter, time.time() - start_time)))
 					#if  counter == 2:
 					#    self.sample_model(args.sample_dir, epoch, i)
 				tmp_rand = random.random()
-				if tmp_rand <= 10.1: 
+				if tmp_rand <= 0.1: 
 					#self.validate(epoch,args)
 					tmp_dir = './{}/{}/'.format(args.sample_dir,epoch) 
 					if not os.path.exists(tmp_dir):
