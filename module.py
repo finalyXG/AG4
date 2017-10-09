@@ -346,7 +346,7 @@ def videogan_generator_shiftpixel(self, image,z,mtx, options, reuse = False, nam
 		reconstructed = tf.reshape(reconstructed, [self.batch_size , self.frames_nb, self.image_size, self.image_size,3])
 
 		#return gf4, mask1, mask2, mask3, gb4, static_video, m1_gb, m2_gf, m3_im
-		return image_patches,transformed0, None, None, None, None, None, reconstructed, None, None, None        
+		return None, None, None, None, None, reconstructed, None, None, None        
         
         
         

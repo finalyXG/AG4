@@ -50,7 +50,7 @@ class cyclegan(object):
 
 		if args.use_resnet:
 			#self.generatorA = generator_resnet_video
-			self.generatorA = videogan_generator #videogan_generator_shiftpixel#videogan_generator
+			self.generatorA = videogan_generator_shiftpixel#videogan_generator
 			self.generatorB = None
 			self.generator_Camera = camera_movement_generator
 		else:
@@ -253,16 +253,15 @@ class cyclegan(object):
 			idx = np.random.permutation(db.shape[0] - 1)
 			self.count_end = db.shape[0]
             
+			merge_image = np.zeros((self.batch_size,self.image_size,self.image_size,3))
+			merge_image_false = np.zeros((self.batch_size,self.image_size,self.image_size,3))
+			a_video = np.zeros((self.batch_size,self.frames_nb,self.image_size,self.image_size,self.input_c_dim))		
+
 			epoch += 1
 			i = 0
 			for ii in idx:
 				i += 1
                 
-				merge_image = np.zeros((self.batch_size,self.image_size,self.image_size,3))
-				merge_image_false = np.zeros((self.batch_size,self.image_size,self.image_size,3))
-				a_video = np.zeros((self.batch_size,self.frames_nb,self.image_size,self.image_size,self.input_c_dim))		
-
-
 				shot = np.array(db[ii]) / 127.5 - 1
 				current_frame = shot[0]
 				pre_frame = db[ii+1,0]
@@ -297,7 +296,8 @@ class cyclegan(object):
 					.astype(np.float32)
 
 				if flag_camera == 0:#self.fake_A fake_A
-					fake_A, real_video_tf,real_image_tf,real_image_crop,m1_gb,m2_gf,m3_im,mask1,mask2,mask3,g4,gb = self.sess.run([self.fake_A, self.real_video_tf, self.real_data_image, self.real_image_crop,self.m1_gb, self.m2_gf, self.m3_im, self.mask1, self.mask2, self.mask3,self.g4,self.gb ],feed_dict={self.real_data_image: merge_image,self.z:batch_z,self.real_data_video:a_video})
+					#fake_A, real_video_tf,real_image_tf,real_image_crop,m1_gb,m2_gf,m3_im,mask1,mask2,mask3,g4,gb = self.sess.run([self.fake_A, self.real_video_tf, self.real_data_image, self.real_image_crop,self.m1_gb, self.m2_gf, self.m3_im, self.mask1, self.mask2, self.mask3,self.g4,self.gb ],feed_dict={self.real_data_image: merge_image,self.z:batch_z,self.real_data_video:a_video})
+					fake_A = self.sess.run([self.fake_A],feed_dict={self.real_data_image: merge_image,self.z:batch_z,self.real_data_video:a_video})
 					fake_A = np.array([fake_A])
 					pred_video = fake_A[0]                      
 					# Update Critic network # #self.d_clamp_op
@@ -343,29 +343,9 @@ class cyclegan(object):
 					make_gif(np.squeeze(np.array(real_video_tf[0])),\
 							'./{}/{}/A_{}_{:02d}_{:03d}.gif'.format(args.sample_dir,epoch,i,2,epoch),2)
 					make_gif(np.array(pred_video[0]),\
-							'./{}/{}/A_{}_{:02d}_{:03d}.gif'.format(args.sample_dir,epoch,i,3,epoch),2)
+							'./{}/{}/A_{}_{:02d}_{:03d}.gif'.format(args.sample_dir,epoch,i,3,epoch),2)                    
                     
-					make_gif(np.array(m1_gb[0]),\
-							'./{}/{}/A_{}_{:02d}_{:03d}.gif'.format(args.sample_dir,epoch,i,4,epoch),2)
-					make_gif(np.array(m2_gf[0]),\
-							'./{}/{}/A_{}_{:02d}_{:03d}.gif'.format(args.sample_dir,epoch,i,5,epoch),2)
-					make_gif(np.array(m3_im[0]),\
-							'./{}/{}/A_{}_{:02d}_{:03d}.gif'.format(args.sample_dir,epoch,i,6,epoch),2)                    
-                    
-					make_gif(np.squeeze(np.array(mask1[0])),\
-							'./{}/{}/A_{}_{:02d}_{:03d}.gif'.format(args.sample_dir,epoch,i,7,epoch),2)
-					make_gif(np.squeeze(np.array(mask2[0])),\
-							'./{}/{}/A_{}_{:02d}_{:03d}.gif'.format(args.sample_dir,epoch,i,8,epoch),2)
-					make_gif(np.squeeze(np.array(mask3[0])),\
-							'./{}/{}/A_{}_{:02d}_{:03d}.gif'.format(args.sample_dir,epoch,i,9,epoch),2)
-                    
-					make_gif(np.squeeze(np.array(g4[0])),\
-							'./{}/{}/A_{}_{:02d}_{:03d}.gif'.format(args.sample_dir,epoch,i,10,epoch),2)
-					make_gif(np.squeeze(np.array(gb[0])),\
-							'./{}/{}/A_{}_{:02d}_{:03d}.gif'.format(args.sample_dir,epoch,i,11,epoch),2)
-  
-                    
-				if np.mod(counter, 400) == 0:
+				if np.mod(counter, 4000) == 0:
 					self.save(args.checkpoint_dir, counter )
 
 
